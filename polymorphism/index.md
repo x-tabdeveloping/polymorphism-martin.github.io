@@ -48,7 +48,7 @@ fun foo(x : T) {
     //do stuff
 }
 ```
-Now that's a lot better. But still, how would you approach getting out the value from the wrapper here? There are to possible solutions. The first one is pretty old and not really efficient, but we'll have a look at it just for good measure :
+Now that's a lot better. But still, how would you approach getting out the value from the wrapper here? There are two possible solutions. The first one is pretty old and not really efficient, but we'll have a look at it just for good measure :
 ```scala
 fun foo(x : T) {
     if x is Str then
@@ -57,7 +57,7 @@ fun foo(x : T) {
         print((x as Num).i)
 }
 ```
-Even in those modern languages which follow this guideline there exists such thing as smart casting, where you don't have to explicit about your castings (e.g. Kotlin)
+Even in those modern languages which follow this guideline there exists such thing as smart casting, where you don't have to be explicit about your castings (e.g. Kotlin)
 
 Let's look at the other solution : ***Pattern matching***
 ```scala
