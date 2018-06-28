@@ -1,0 +1,76 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Untitled Document.md</title><style></style></head><body id="preview">
+<h1><a id="Polymorphism_0"></a>Polymorphism</h1>
+<p>Almost every modern statically typed programming language is capable of type polymorphism, either achieved by inheritence (OOP) or by typeclasses (Scala) or polymorphic types (Haskell).</p>
+<h2><a id="What_is_polymorphism_6"></a>What is polymorphism?</h2>
+<p>Type polymorphism is essentially when a type has subtypes. The values of these subtypes can either be treated  as a value of the subtype or a value of the supertype, which is an incredibly useful feature, when we want to do <em>generics</em>.<br>
+Polymorphism can also be useful, when structure types have a field which is not necessarily existant.</p>
+<p>Okay, I know this sounds insane so let me clarify what this means with some code examples<br>
+Let’s imagine a scenario, when you’d want to create a function which either excepts an <code>integer</code> as its input or a <code>string</code>.<br>
+There are several solutions to this in the world of programming, one of them being templates :</p>
+<pre><code class="language-scala">template&lt;<span class="hljs-type">T</span>&gt;
+fun foo(a : <span class="hljs-type">T</span>) {
+    <span class="hljs-comment">//do something</span>
+}
+</code></pre>
+<p>Templates are handled by the compiler and rely on static dispatch, which we will discuss later. There are two problems with this approach. First, there’s absolutely no guarantee that only a <code>string</code> or an <code>integer</code> could be passed to a function. So what if I passed <code>Unit</code>?</p>
+<pre><code class="language-scala">foo(<span class="hljs-type">Unit</span>) <span class="hljs-comment">//wtf is this supposed to do?</span>
+</code></pre>
+<p>Well we’ve got no implementation for <code>Unit</code>, so our function’s gonna crash, which is bad (as if you couldn’t guess). The other problem is that the function has no idea which type is passed to it, so we have to introduce new syntax to do that. But I don’t feel like doing it, also because this is a bad approach.</p>
+<p>Let’s have a look at how you would approach this with static dispatch.</p>
+<pre><code class="language-scala">fun foo(x : <span class="hljs-type">Int</span>) {
+    <span class="hljs-comment">//do stuff</span>
+}
+
+fun foo(x : <span class="hljs-type">String</span>) {
+    <span class="hljs-comment">//do stuff</span>
+}
+</code></pre>
+<p>Looks much better doesn’t it? We’re still not quite there though…<br>
+This approach could get pretty confusing when different types like <code>Double</code> and <code>Int</code> have the same literals, and then you would have to introduce new literals…<br>
+Also what would be the type of <code>foo</code> here? And then you’d have to ask which <code>foo</code> am I talking about. I hope you feel that this isn’t quite the right solution.</p>
+<p>And then there comes polymorphism!! I’ll present this with rather an OOP approach (although I’m a huge fan of GADT-s I think it’s out of our reach for now)</p>
+<pre><code class="language-scala"><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-title">T</span> 
+</span><span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-title">Str</span>(</span>s : <span class="hljs-type">String</span>) : <span class="hljs-type">T</span>
+<span class="hljs-class"><span class="hljs-keyword">type</span> <span class="hljs-title">Num</span>(</span>i : <span class="hljs-type">Integer</span>) : <span class="hljs-type">T</span>
+
+fun foo(x : <span class="hljs-type">T</span>) {
+    <span class="hljs-comment">//do stuff</span>
+}
+</code></pre>
+<p>Now that’s a lot better. But still, how would you approach getting out the value from the wrapper here? There are to possible solutions. The first one is pretty old and not really efficient, but we’ll have a look at it just for good measure :</p>
+<pre><code class="language-scala">fun foo(x : <span class="hljs-type">T</span>) {
+    <span class="hljs-keyword">if</span> x is <span class="hljs-type">Str</span> then
+        print((x as <span class="hljs-type">Str</span>).s)
+    <span class="hljs-keyword">else</span>
+        print((x as <span class="hljs-type">Num</span>).i)
+}
+</code></pre>
+<p>Even in those modern languages which follow this guideline there exists such thing as smart casting, where you don’t have to explicit about your castings (e.g. Kotlin)</p>
+<p>Let’s look at the other solution : <strong><em>Pattern matching</em></strong></p>
+<pre><code class="language-scala">fun foo(x : <span class="hljs-type">T</span>) {
+    x <span class="hljs-keyword">match</span>
+        <span class="hljs-keyword">case</span> <span class="hljs-type">Str</span>(s) -&gt; print(s)
+        <span class="hljs-keyword">case</span> <span class="hljs-type">Num</span>(i) -&gt; print(i)
+}
+</code></pre>
+<p>Huh there’s a lot going on here, let’s break it down.<br>
+First thing we do is match on the expression <code>x</code>. The first case we have to consider is when <code>x</code> is a <code>Str</code> containing a variable of type <code>String</code> which we’ll call <code>s</code>. If the match succeeds the <code>String</code> contained gets bound to the name <code>s</code> in the expression followed by the <code>-&gt;</code>. Then we do the same thing with the case when we have a <code>Num</code>.<br>
+Because <code>T</code> has only two <em>subtypes</em> the pattern matching is <em>exhaustive</em> meaning, that it will give us an answer in every case, for every expression of type <code>T</code>.</p>
+<p>Let’s think of a function that depending on which subtype it’s gotten returns us a <code>String</code>.</p>
+<pre><code class="language-scala">fun foo(x : <span class="hljs-type">T</span>) = 
+    x <span class="hljs-keyword">match</span>
+        <span class="hljs-keyword">case</span> <span class="hljs-type">Str</span>(_) -&gt; <span class="hljs-string">"Str"</span>
+        <span class="hljs-keyword">case</span> <span class="hljs-type">Num</span>(_) -&gt; <span class="hljs-string">"Num"</span>
+</code></pre>
+<p>What’s that underscore???<br>
+The underscore here means, that the matching is going to discard the value inside <code>x</code>, nothing gets bound. As we don’t care about what’s wrapped in <code>x</code> just the type this, is okay, but we have to be explicit even about the variable we don’t care about.<br>
+Pattern matching is always type safe, because a pattern matching <strong><em>has to be exhaustive</em></strong>.<br>
+Even if I don’t care about anything else just the <code>Str</code>-s, I have to explicitely handle every other case, cause otherwise our function would we partial (which is again a bad thing). Let’s have a look at our next example.</p>
+<pre><code class="language-scala">fun foo(x : <span class="hljs-type">T</span>) = 
+    x <span class="hljs-keyword">match</span>
+        <span class="hljs-keyword">case</span> <span class="hljs-type">Str</span>(s) -&gt; <span class="hljs-string">"Str "</span> ++ s
+        <span class="hljs-keyword">case</span> _ -&gt; <span class="hljs-string">"Not an Str"</span>
+</code></pre>
+<p>As I mentioned earlier the underscore matches in every possible situation, so our pattern matching remains exhaustive</p>
+
+</body></html>
